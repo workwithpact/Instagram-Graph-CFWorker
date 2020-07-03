@@ -2,7 +2,6 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event))
 })
 
-// 2. Return a custom request object
 async function handleRequest(event) {
   const request = event.request
   const url = new URL(request.url)
