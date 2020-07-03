@@ -10,6 +10,6 @@ wranger secret put TOKEN_ALEXLECLAIR
 ```
 and paste in your [Basic Display API token](https://developers.facebook.com/docs/instagram-basic-display-api/)
 
-Instagram data will then be available at : https://<worker-name>.<subdomain>.workers.dev/alexleclair
+Instagram data will then be available at : `https://<worker-name>.<subdomain>.workers.dev/alexleclair`
 
 
