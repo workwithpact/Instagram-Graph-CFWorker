@@ -8,7 +8,7 @@ Once deployed to Cloudflare, create a new secret for each of your clients. For e
 ```
 wranger secret put TOKEN_ALEXLECLAIR
 ```
-and paste in your (https://developers.facebook.com/docs/instagram-basic-display-api/)[Basic Display API token]
+and paste in your [https://developers.facebook.com/docs/instagram-basic-display-api/](Basic Display API token)
 
 Instagram data will then be available at : https://<worker-name>.<subdomain>.workers.dev/alexleclair
 
