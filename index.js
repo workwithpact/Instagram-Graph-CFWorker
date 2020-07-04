@@ -18,7 +18,7 @@ async function handleRequest(event) {
   
   const time = Math.floor((new Date()).getTime() / (1000*10*60))
   const cacheUrl = new URL(request.url)
-  cacheUrl.pathname = `/${paths[1]}/${cacheUrl}`
+  cacheUrl.pathname = `/${paths[1]}/${time}`
   const cacheKey = new Request(cacheUrl.toString(), request)
   let response = await cache.match(cacheKey)
   if (!response) {
@@ -28,6 +28,8 @@ async function handleRequest(event) {
     const instagramData = await fetch(instagramUrl)
     const instagramJson = await instagramData.json()
     delete instagramJson.paging
+    instagramJson.fetch_time = (new Date()).getTime()
+    instagramJson.cache_key = cacheUrl.pathname
     response = new Response(JSON.stringify(instagramJson))
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Content-Type', 'application/json')
