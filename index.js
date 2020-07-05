@@ -24,7 +24,6 @@ async function handleRequest(event) {
   if (!response) {
     const instagramUrl = `https://graph.instagram.com/me/media?fields=id,username,media_url,timestamp,media_type,thumbnail_url,caption,permalink&access_token=${token}&limit=100`
     const refreshUrl = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${token}`
-    await fetch(refreshUrl)
     const instagramData = await fetch(instagramUrl)
     const instagramJson = await instagramData.json()
     delete instagramJson.paging
@@ -33,7 +32,10 @@ async function handleRequest(event) {
     response = new Response(JSON.stringify(instagramJson))
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Content-Type', 'application/json')
-    event.waitUntil(cache.put(cacheKey, response.clone()))
+    event.waitUntil(async () => {
+      await cache.put(cacheKey, response.clone())
+      await fetch(refreshUrl)
+    })
   }
   return response
 }
