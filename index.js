@@ -32,10 +32,8 @@ async function handleRequest(event) {
     response = new Response(JSON.stringify(instagramJson))
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Content-Type', 'application/json')
-    event.waitUntil(async () => {
-      await cache.put(cacheKey, response.clone())
-      await fetch(refreshUrl)
-    })
+    event.waitUntil(cache.put(cacheKey, response.clone()))
+    event.waitUntil(fetch(refreshUrl))
   }
   return response
 }
