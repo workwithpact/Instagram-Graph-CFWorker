@@ -5,6 +5,9 @@ addEventListener('fetch', event => {
 async function handleRequest(event) {
   const request = event.request
   const url = new URL(request.url)
+  const searchParams = new URLSearchParams(url.search)
+  const count = (searchParams.get('count') || 15) * 1
+  const callback = searchParams.get('callback') || null
   const paths = url.pathname.split('/')
   if (paths.length < 2) {
     return new Response('Unknown project id.')
@@ -35,5 +38,13 @@ async function handleRequest(event) {
     event.waitUntil(cache.put(cacheKey, response.clone()))
     event.waitUntil(fetch(refreshUrl))
   }
-  return response
+  const dataJson = await response.json()
+  if (dataJson && dataJson.data && dataJson.data.length) {
+    dataJson.data = dataJson.data.slice(0, count)
+  }
+  const resData = `${callback ? `${callback}(` : ''}${JSON.stringify(dataJson)}${callback ? ');' : ''}`
+  const dataResponse = new Response(resData)
+  dataResponse.headers.set('Access-Control-Allow-Origin', '*')
+  dataResponse.headers.set('Content-Type', callback ? 'text/javascript' : 'application/json')
+  return dataResponse
 }
