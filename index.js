@@ -34,7 +34,7 @@ async function handleRequest(event) {
     instagramJson.cache_key = cacheUrl.pathname
     response = new Response(JSON.stringify(instagramJson))
     response.headers.set('Access-Control-Allow-Origin', '*')
-    response.headers.set('Content-Type', 'application/json')
+    response.headers.set('Content-Type', 'application/json; charset=utf-8')
     event.waitUntil(cache.put(cacheKey, response.clone()))
     event.waitUntil(fetch(refreshUrl))
   }
@@ -45,6 +45,6 @@ async function handleRequest(event) {
   const resData = `${callback ? `${callback}(` : ''}${JSON.stringify(dataJson)}${callback ? ');' : ''}`
   const dataResponse = new Response(resData)
   dataResponse.headers.set('Access-Control-Allow-Origin', '*')
-  dataResponse.headers.set('Content-Type', callback ? 'text/javascript' : 'application/json')
+  dataResponse.headers.set('Content-Type', callback ? 'text/javascript; charset=utf-8' : 'application/json; charset=utf-8')
   return dataResponse
 }
