@@ -1,3 +1,8 @@
+const appConfig = {
+  id: typeof APP_ID === 'undefined' ? '' : APP_ID,
+  secret: typeof APP_SECRET === 'undefined' ? '' : APP_SECRET
+}
+
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event))
 })
@@ -9,14 +14,87 @@ async function handleRequest(event) {
   const count = (searchParams.get('count') || 15) * 1
   const callback = searchParams.get('callback') || null
   const paths = url.pathname.split('/')
-  if (paths.length < 2) {
-    return new Response('Unknown project id.')
+  if (paths.length < 2 || !paths[1]) {
+    console.log('Instagram Login Flow')
+    try {
+      if (searchParams.get('code')) {
+        console.log('We have a code', searchParams.get('code'))
+
+        const secretExchange = await fetch(`https://api.instagram.com/oauth/access_token`, {
+          method: 'post',
+          body: new URLSearchParams({
+            client_id: appConfig.id,
+            client_secret: appConfig.secret,
+            grant_type: 'authorization_code',
+            redirect_uri: `https://${url.host}/`,
+            code: searchParams.get('code')
+          })
+        })
+        console.log('Got secret exchange data')
+
+        const exchangeJson = await secretExchange.json()
+        console.log(exchangeJson)
+
+        // Refresh the token
+        const tokenExchange = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appConfig.secret)}&access_token=${encodeURIComponent(exchangeJson.access_token)}`)
+        const tokenExchangeJson = await tokenExchange.json()
+        const longLivedToken = tokenExchangeJson.access_token
+        const userProfile = await (await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${longLivedToken}`)).json()
+        if (userProfile && userProfile.username) {
+          await graphConfig.put(userProfile.username.toUpperCase(), JSON.stringify({
+            ...userProfile,
+            ...tokenExchangeJson,
+            updated_at: (new Date()).getTime()
+          }))
+        }
+        return new Response(`<html><head><title>Insagram Graph</title><script>history.replaceState({}, document.title, '/')</script></head><body><h1>Everything is looking good!</h1><p>Your media endpoint is ready to be used and can be accessed through <a href="/${userProfile.username}">https://${url.host}/${userProfile.username}</a>!</p></body></html>`, {
+          headers: {
+            'Content-Type': 'text/html'
+          }
+        })
+      }
+    } catch (e) {
+      console.log(e)
+      return new Response(`<html><head><title>Insagram Graph</title><script>history.replaceState({}, document.title, '/')</script></head><body><h1>Uh oh. Something went wrong.</h1><p>Please try again later. If the issue persists, double check your application configuration and that your Instagram account is setup as a tester if your application is in development mode.</p></body></html>`, {
+          headers: {
+            'Content-Type': 'text/html'
+          }
+        })
+    }
+    return new Response('', {
+      headers: {
+        'Location': `https://api.instagram.com/oauth/authorize?client_id=${appConfig.id}&redirect_uri=${encodeURIComponent(`https://${url.host}/`)}&scope=user_profile,user_media&response_type=code`
+      },
+      status: 302
+    })
   }
   const projectId = `token_${paths[1]}`.toUpperCase()
-  if (!this || !this[projectId]) {
-    return new Response('Unknown project id.')
+  
+  let token = (this && this[projectId]) || null
+  if (!token && typeof graphConfig !== 'undefined') {
+    let config = null;
+    try {
+      console.log('Config?')
+      config = JSON.parse(await graphConfig.get(paths[1].toUpperCase()))
+    } catch (e) {
+      console.error('Error',e)
+    }
+    console.log('Got config', config)
+    token = config && config.access_token
   }
-  const token = this[projectId]
+
+  if (!token) {
+    return new Response(JSON.stringify({
+      status: 'error',
+      message: 'Unknown token'
+    }), {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      status: 400
+    });
+  }
+
   let cache = caches.default
   
   const time = Math.floor((new Date()).getTime() / (1000*10*60))
